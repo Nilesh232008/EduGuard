@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- SEARCH -->
+    <EditText
+        android:id="@+id/searchStudent"
+        android:hint="Search student..."
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"/>
+
+    <!-- MARK ALL -->
+    <Button
+        android:id="@+id/btnMarkAll"
+        android:text="Mark All Present"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#0B47CA"
+        android:textColor="@android:color/white"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- SAVE BUTTON (VERY IMPORTANT) -->
+    <Button
+        android:id="@+id/btnSaveAttendance"
+        android:text="Save Attendance"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="#2563EB"
+        android:textColor="@android:color/white"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- RECYCLER -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/attendanceRecycler"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>

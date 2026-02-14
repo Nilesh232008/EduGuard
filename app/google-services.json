@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "395421598406",
+    "project_id": "eduguard-fc5a0",
+    "storage_bucket": "eduguard-fc5a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395421598406:android:59c6c39f9dd10524610dc7",
+        "android_client_info": {
+          "package_name": "com.v2v.eduguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrtrdxqtUm5ZStUWAXPpb7oR140emNzQ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
