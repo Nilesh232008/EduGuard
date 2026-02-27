@@ -1,5 +1,7 @@
 package com.v2v.eduguard;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.*;
 import android.widget.ProgressBar;
@@ -10,12 +12,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-public class InsightsAdapter
-        extends RecyclerView.Adapter<InsightsAdapter.ViewHolder>{
+public class InsightsAdapter extends RecyclerView.Adapter<InsightsAdapter.ViewHolder>{
 
     ArrayList<Student> list;
+    Context context;
 
-    public InsightsAdapter(ArrayList<Student> list){
+    public InsightsAdapter(Context context, ArrayList<Student> list){
+        this.context = context;
         this.list = list;
     }
 
@@ -51,29 +54,27 @@ public class InsightsAdapter
         Student s = list.get(position);
 
         holder.name.setText(s.name);
-        holder.risk.setText("Risk Score: " + s.riskScore);
-
+        holder.risk.setText(s.riskScore + "% Risk (" + s.riskLevel + ")");
         holder.progress.setProgress(s.riskScore);
 
-        // 🔥 Color Logic
         if(s.riskScore >= 70){
-
             holder.risk.setTextColor(Color.RED);
-            holder.progress.getProgressDrawable()
-                    .setTint(Color.RED);
-
-        }else if(s.riskScore >= 40){
-
-            holder.risk.setTextColor(Color.parseColor("#FFA500"));
-            holder.progress.getProgressDrawable()
-                    .setTint(Color.parseColor("#FFA500"));
-
-        }else{
-
-            holder.risk.setTextColor(Color.parseColor("#16A34A"));
-            holder.progress.getProgressDrawable()
-                    .setTint(Color.parseColor("#16A34A"));
         }
+        else if(s.riskScore >= 40){
+            holder.risk.setTextColor(Color.parseColor("#FFA500"));
+        }
+        else{
+            holder.risk.setTextColor(Color.parseColor("#16A34A"));
+        }
+
+        // 🔥 OPEN DETAIL PAGE
+        holder.itemView.setOnClickListener(v -> {
+
+            Intent intent = new Intent(context, StudentDetailActivity.class);
+            intent.putExtra("studentId", s.id);
+            context.startActivity(intent);
+
+        });
     }
 
     @Override
@@ -81,4 +82,3 @@ public class InsightsAdapter
         return list.size();
     }
 }
-

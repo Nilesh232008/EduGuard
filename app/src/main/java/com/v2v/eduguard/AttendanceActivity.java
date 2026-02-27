@@ -16,6 +16,10 @@ import com.google.firebase.database.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class AttendanceActivity extends AppCompatActivity {
 
     RecyclerView recycler;
@@ -30,7 +34,7 @@ public class AttendanceActivity extends AppCompatActivity {
     DatabaseReference studentsRef, attendanceRef;
 
     String teacherId;
-    String classId = ""; // assume single class teacher
+    String classId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,24 +59,13 @@ public class AttendanceActivity extends AppCompatActivity {
         loadStudents();
 
         btnMarkAll.setOnClickListener(v -> {
-
             for(Student s : filteredList){
                 s.present = true;
             }
-
             adapter.notifyDataSetChanged();
         });
 
-        btnSave.setOnClickListener(v -> {
-
-            new android.app.AlertDialog.Builder(this)
-                    .setTitle("Confirm Attendance")
-                    .setMessage("Save today's attendance?")
-                    .setPositiveButton("Save",(d,w)-> saveAttendance())
-                    .setNegativeButton("Cancel",null)
-                    .show();
-        });
-
+        btnSave.setOnClickListener(v -> saveAttendance());
 
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s,int a,int b,int c){}
@@ -83,7 +76,6 @@ public class AttendanceActivity extends AppCompatActivity {
         });
     }
 
-    // 🔥 LOAD TEACHER STUDENTS
     private void loadStudents(){
 
         studentsRef.orderByChild("teacherId")
@@ -98,11 +90,9 @@ public class AttendanceActivity extends AppCompatActivity {
                         for(DataSnapshot ds : snapshot.getChildren()){
 
                             String id = ds.getKey();
-                            String name = ds.child("name")
-                                    .getValue(String.class);
+                            String name = ds.child("name").getValue(String.class);
 
-                            classId = ds.child("classId")
-                                    .getValue(String.class);
+                            classId = ds.child("classId").getValue(String.class);
 
                             studentList.add(new Student(id,name));
                         }
@@ -114,7 +104,7 @@ public class AttendanceActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) { }
+                    public void onCancelled(@NonNull DatabaseError error) {}
                 });
     }
 
@@ -123,10 +113,7 @@ public class AttendanceActivity extends AppCompatActivity {
         filteredList.clear();
 
         for(Student s : studentList){
-
-            if(s.name.toLowerCase()
-                    .contains(text.toLowerCase())){
-
+            if(s.name.toLowerCase().contains(text.toLowerCase())){
                 filteredList.add(s);
             }
         }
@@ -134,7 +121,7 @@ public class AttendanceActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    // 🔥 CALL THIS WHEN SAVING (Add a Save Button later)
+    // 🔥 SAVE ATTENDANCE
     private void saveAttendance(){
 
         String today = new SimpleDateFormat("yyyy-MM-dd",
@@ -147,16 +134,16 @@ public class AttendanceActivity extends AppCompatActivity {
             todayRef.child(s.id).setValue(s.present);
         }
 
-        // 🔥 UPDATE ML FIELD
         updateAttendancePercentage();
 
         Toast.makeText(this,
-                "Attendance Saved Successfully!",
+                "Attendance Saved!",
                 Toast.LENGTH_SHORT).show();
 
         finish();
     }
 
+    // 🔥 UPDATE % + CALL ML
     private void updateAttendancePercentage(){
 
         studentsRef.orderByChild("teacherId")
@@ -197,9 +184,13 @@ public class AttendanceActivity extends AppCompatActivity {
                                             int percentage = totalDays == 0 ? 0 :
                                                     (presentDays * 100 / totalDays);
 
+                                            // 🔥 SAVE % IN FIREBASE
                                             studentsRef.child(studentId)
                                                     .child("attendance")
                                                     .setValue(percentage);
+
+                                            // 🔥 CALL ML API
+                                            callML(studentId, percentage);
                                         }
 
                                         @Override
@@ -213,5 +204,43 @@ public class AttendanceActivity extends AppCompatActivity {
                 });
     }
 
-}
+    // 🔥 ML API FUNCTION (PUT HERE ONLY)
+    private void callML(String studentId, float attendance){
 
+        ApiService api = RetrofitClient
+                .getClient()
+                .create(ApiService.class);
+
+        // default values (you can improve later)
+        StudentData data = new StudentData(
+                attendance,
+                50f,   // marks
+                1f,    // behavior
+                1f,    // fees
+                0f     // assignments
+        );
+
+        api.getRisk(data).enqueue(new Callback<RiskResponse>() {
+            @Override
+            public void onResponse(Call<RiskResponse> call,
+                                   Response<RiskResponse> response) {
+
+                if(response.isSuccessful() && response.body()!=null){
+
+                    int risk = response.body().getRisk();
+                    String level = response.body().getLevel();
+
+                    studentsRef.child(studentId).child("riskScore").setValue(risk);
+                    studentsRef.child(studentId).child("riskLevel").setValue(level);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<RiskResponse> call, Throwable t) {
+                Toast.makeText(AttendanceActivity.this,
+                        "ML Error",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+}

@@ -2,7 +2,6 @@ package com.v2v.eduguard;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
-import android.text.*;
 import android.widget.*;
 
 import androidx.annotation.NonNull;
@@ -17,7 +16,7 @@ import java.util.*;
 
 public class HomeworkActivity extends AppCompatActivity {
 
-    EditText etSubject, search;
+    EditText etSubject, etAssignmentNo, searchStudent;
     TextView tvDate;
     Button btnSave;
 
@@ -25,13 +24,11 @@ public class HomeworkActivity extends AppCompatActivity {
     HomeworkAdapter adapter;
 
     ArrayList<Student> studentList = new ArrayList<>();
-    ArrayList<Student> filteredList = new ArrayList<>();
 
-    DatabaseReference studentsRef, homeworkRef, statusRef;
+    DatabaseReference studentsRef, homeworkRef;
 
-    String teacherId;
-    String classId = "";
     String selectedDate = "";
+    String teacherId, classId = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,133 +36,146 @@ public class HomeworkActivity extends AppCompatActivity {
         setContentView(R.layout.activity_homework);
 
         etSubject = findViewById(R.id.etSubject);
+        etAssignmentNo = findViewById(R.id.etAssignmentNo);
         tvDate = findViewById(R.id.tvDate);
-        search = findViewById(R.id.searchStudent);
         btnSave = findViewById(R.id.btnSaveHomework);
         recycler = findViewById(R.id.homeworkRecycler);
+        searchStudent = findViewById(R.id.searchStudent);
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
-
-        adapter = new HomeworkAdapter(filteredList);
-        recycler.setAdapter(adapter);
 
         teacherId = FirebaseAuth.getInstance().getUid();
 
         studentsRef = FirebaseDatabase.getInstance().getReference("Students");
         homeworkRef = FirebaseDatabase.getInstance().getReference("Homework");
-        statusRef = FirebaseDatabase.getInstance().getReference("HomeworkStatus");
 
+        loadTeacherClass();
         pickDate();
-        loadStudents();
 
         btnSave.setOnClickListener(v -> saveHomework());
-
-        search.addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence s,int a,int b,int c){}
-            public void onTextChanged(CharSequence s,int a,int b,int c){
-                filter(s.toString());
-            }
-            public void afterTextChanged(Editable s){}
-        });
     }
 
-    private void pickDate(){
+    // 🔥 Get teacher class
+    private void loadTeacherClass() {
 
-        tvDate.setOnClickListener(v -> {
+        DatabaseReference classRef = FirebaseDatabase.getInstance().getReference("Classes");
 
-            Calendar cal = Calendar.getInstance();
-
-            new DatePickerDialog(this,
-                    (view,year,month,day)->{
-
-                        selectedDate = year+"-"+(month+1)+"-"+day;
-                        tvDate.setText(selectedDate);
-
-                    },
-                    cal.get(Calendar.YEAR),
-                    cal.get(Calendar.MONTH),
-                    cal.get(Calendar.DAY_OF_MONTH))
-                    .show();
-        });
-    }
-
-    private void loadStudents(){
-
-        studentsRef.orderByChild("teacherId")
+        classRef.orderByChild("teacherId")
                 .equalTo(teacherId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                        for (DataSnapshot snap : snapshot.getChildren()) {
+                            classId = snap.getKey();
+                        }
+
+                        loadStudents();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    // 🔥 Load students of class
+    private void loadStudents() {
+
+        studentsRef.orderByChild("classId")
+                .equalTo(classId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
 
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                        for(DataSnapshot ds : snapshot.getChildren()){
+                        studentList.clear();
 
-                            String id = ds.getKey();
-                            String name = ds.child("name")
-                                    .getValue(String.class);
-
-                            classId = ds.child("classId")
-                                    .getValue(String.class);
-
-                            studentList.add(new Student(id,name));
+                        for (DataSnapshot snap : snapshot.getChildren()) {
+                            Student s = snap.getValue(Student.class);
+                            if (s != null) studentList.add(s);
                         }
 
-                        filteredList.addAll(studentList);
-                        adapter.notifyDataSetChanged();
+                        adapter = new HomeworkAdapter(studentList);
+                        recycler.setAdapter(adapter);
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) { }
+                    public void onCancelled(@NonNull DatabaseError error) {}
                 });
     }
 
-    private void filter(String text){
+    // 🔥 Date Picker
+    private void pickDate() {
+        tvDate.setOnClickListener(v -> {
 
-        filteredList.clear();
+            Calendar c = Calendar.getInstance();
 
-        for(Student s : studentList){
-
-            if(s.name.toLowerCase().contains(text.toLowerCase())){
-                filteredList.add(s);
-            }
-        }
-
-        adapter.notifyDataSetChanged();
+            new DatePickerDialog(this,
+                    (view, y, m, d) -> {
+                        selectedDate = d + "/" + (m + 1) + "/" + y;
+                        tvDate.setText(selectedDate);
+                    },
+                    c.get(Calendar.YEAR),
+                    c.get(Calendar.MONTH),
+                    c.get(Calendar.DAY_OF_MONTH)
+            ).show();
+        });
     }
 
-    private void saveHomework(){
+    // 🔥 SAVE HOMEWORK (ASSIGNMENT)
+    private void saveHomework() {
 
         String subject = etSubject.getText().toString().trim();
+        String assignmentNo = etAssignmentNo.getText().toString().trim();
 
-        if(subject.isEmpty() || selectedDate.isEmpty()){
-            Toast.makeText(this,"Enter subject & date",Toast.LENGTH_SHORT).show();
+        if (subject.isEmpty() || assignmentNo.isEmpty() || selectedDate.isEmpty()) {
+            Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String homeworkId = homeworkRef.child(classId)
-                .push().getKey();
-
-        HashMap<String,Object> hw = new HashMap<>();
-        hw.put("subject",subject);
-        hw.put("date",selectedDate);
-        hw.put("createdBy",teacherId);
-
-        homeworkRef.child(classId)
-                .child(homeworkId)
-                .setValue(hw);
-
-        for(Student s : studentList){
-
-            statusRef.child(homeworkId)
-                    .child(s.id)
-                    .setValue(s.present);
+        if (classId == null || classId.isEmpty()) {
+            Toast.makeText(this, "Class not loaded yet!", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        Toast.makeText(this,
-                "Homework Saved!",
-                Toast.LENGTH_SHORT).show();
+        if (studentList == null || studentList.size() == 0) {
+            Toast.makeText(this, "Students not loaded!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        String hwId = homeworkRef.child(classId).push().getKey();
+
+        if (hwId == null) {
+            Toast.makeText(this, "Error generating ID!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        HashMap<String, Object> hwMap = new HashMap<>();
+        hwMap.put("subject", subject);
+        hwMap.put("assignmentNo", assignmentNo);
+        hwMap.put("dueDate", selectedDate);
+        hwMap.put("createdBy", teacherId);
+        hwMap.put("createdAt", System.currentTimeMillis());
+
+        homeworkRef.child(classId).child(hwId).setValue(hwMap);
+
+        for (Student s : studentList) {
+
+            if (s.id == null) continue; // safety
+
+            HashMap<String, Object> studentMap = new HashMap<>();
+            studentMap.put("name", s.name);
+            studentMap.put("submitted", s.present);
+            studentMap.put("submittedOn", s.present ? selectedDate : "");
+
+            homeworkRef.child(classId)
+                    .child(hwId)
+                    .child("students")
+                    .child(s.id)
+                    .setValue(studentMap);
+        }
+
+        Toast.makeText(this, "Assignment Saved!", Toast.LENGTH_SHORT).show();
         finish();
     }
 }
-

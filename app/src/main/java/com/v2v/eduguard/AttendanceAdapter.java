@@ -47,10 +47,15 @@ public class AttendanceAdapter
         Student s = list.get(position);
 
         holder.name.setText(s.name);
+
+        // 🔥 FIX: remove old listener first
+        holder.present.setOnCheckedChangeListener(null);
+
         holder.present.setChecked(s.present);
 
-        holder.present.setOnCheckedChangeListener((btn,checked) ->
-                s.present = checked);
+        holder.present.setOnCheckedChangeListener((btn,checked) -> {
+            s.present = checked;
+        });
     }
 
     @Override
@@ -58,4 +63,3 @@ public class AttendanceAdapter
         return list.size();
     }
 }
-

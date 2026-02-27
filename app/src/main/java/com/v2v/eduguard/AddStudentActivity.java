@@ -207,24 +207,33 @@ public class AddStudentActivity extends AppCompatActivity {
 
         String studentId = studentsRef.push().getKey();
 
+        if(studentId == null){
+            Toast.makeText(this,"Error creating student ID",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         HashMap<String,Object> studentMap = new HashMap<>();
 
-        studentMap.put("name",studentName);
-        studentMap.put("classId",selectedClassId);
-        studentMap.put("className",selectedClassName);
-        studentMap.put("teacherId",teacherId);
-        studentMap.put("parentId",parentId);
-        studentMap.put("parentEmail",email);
+        // ✅ BASIC INFO
+        studentMap.put("name", studentName);
+        studentMap.put("classId", selectedClassId);
+        studentMap.put("className", selectedClassName);
+        studentMap.put("teacherId", teacherId);
+        studentMap.put("parentId", parentId);
+        studentMap.put("parentEmail", email);
 
-        studentMap.put("attendance",0);
-        studentMap.put("marks",50);
-        studentMap.put("behavior",1);
-        studentMap.put("feesPaid",true);
+        // 🔥 DEFAULT VALUES (ALL ZERO)
+        studentMap.put("attendance", 0);
+        studentMap.put("marks", 0);
+        studentMap.put("assignments", 0);
+        studentMap.put("fees", 0);
+        studentMap.put("behaviour", 0);
 
-        studentMap.put("riskScore",0);
-        studentMap.put("riskLevel","LOW");
+        // (optional but good for your AI logic later)
+        studentMap.put("riskScore", 0);
+        studentMap.put("riskLevel", "LOW");
 
-        studentMap.put("createdAt",System.currentTimeMillis());
+        studentMap.put("createdAt", System.currentTimeMillis());
 
         studentsRef.child(studentId)
                 .setValue(studentMap)

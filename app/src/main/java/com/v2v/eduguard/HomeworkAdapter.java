@@ -41,16 +41,18 @@ public class HomeworkAdapter
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder,
-                                 int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
         Student s = list.get(position);
 
         holder.name.setText(s.name);
+
+        holder.done.setOnCheckedChangeListener(null);
         holder.done.setChecked(s.present);
 
-        holder.done.setOnCheckedChangeListener((btn,checked) ->
-                s.present = checked);
+        holder.done.setOnCheckedChangeListener((btn, checked) -> {
+            s.present = checked;
+        });
     }
 
     @Override

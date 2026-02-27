@@ -32,17 +32,16 @@ public class AttendanceFragment extends Fragment {
 
     String teacherId;
     String classId = "";
+    String today;
 
-    // ✅ THIS replaces onCreate()
+    boolean alreadyMarked = false; // 🔥 important
+
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View view = inflater.inflate(
-                R.layout.fragment_attendance,
-                container,
-                false);
+        View view = inflater.inflate(R.layout.fragment_attendance, container, false);
 
         recycler = view.findViewById(R.id.attendanceRecycler);
         search = view.findViewById(R.id.searchStudent);
@@ -54,28 +53,37 @@ public class AttendanceFragment extends Fragment {
         adapter = new AttendanceAdapter(filteredList);
         recycler.setAdapter(adapter);
 
-        teacherId = FirebaseAuth.getInstance()
-                .getCurrentUser()
-                .getUid();
+        teacherId = FirebaseAuth.getInstance().getUid();
 
         studentsRef = FirebaseDatabase.getInstance().getReference("Students");
         attendanceRef = FirebaseDatabase.getInstance().getReference("Attendance");
 
+        today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(new Date());
+
         loadStudents();
 
         btnMarkAll.setOnClickListener(v -> {
+            if(alreadyMarked){
+                Toast.makeText(getContext(),"Already marked today",Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             for(Student s : filteredList){
                 s.present = true;
             }
-
             adapter.notifyDataSetChanged();
         });
 
         btnSave.setOnClickListener(v -> {
 
+            if(alreadyMarked){
+                Toast.makeText(getContext(),"Attendance already saved for today",Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             new android.app.AlertDialog.Builder(getContext())
-                    .setTitle("Confirm Attendance")
+                    .setTitle("Confirm")
                     .setMessage("Save today's attendance?")
                     .setPositiveButton("Save",(d,w)-> saveAttendance())
                     .setNegativeButton("Cancel",null)
@@ -108,18 +116,45 @@ public class AttendanceFragment extends Fragment {
                         for(DataSnapshot ds : snapshot.getChildren()){
 
                             String id = ds.getKey();
-                            String name = ds.child("name")
-                                    .getValue(String.class);
+                            String name = ds.child("name").getValue(String.class);
 
-                            classId = ds.child("classId")
-                                    .getValue(String.class);
+                            classId = ds.child("classId").getValue(String.class);
 
                             studentList.add(new Student(id,name));
                         }
 
+                        checkTodayAttendance(); // 🔥 IMPORTANT
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) { }
+                });
+    }
+
+    // 🔥 CHECK IF ALREADY MARKED
+    private void checkTodayAttendance(){
+
+        attendanceRef.child(classId).child(today)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                        if(snapshot.exists()){
+                            alreadyMarked = true;
+
+                            // load previous values
+                            for(Student s : studentList){
+
+                                Boolean present = snapshot.child(s.id)
+                                        .getValue(Boolean.class);
+
+                                s.present = Boolean.TRUE.equals(present);
+                            }
+                        }
+
                         filteredList.clear();
                         filteredList.addAll(studentList);
-
                         adapter.notifyDataSetChanged();
                     }
 
@@ -133,7 +168,6 @@ public class AttendanceFragment extends Fragment {
         filteredList.clear();
 
         for(Student s : studentList){
-
             if(s.name.toLowerCase().contains(text.toLowerCase())){
                 filteredList.add(s);
             }
@@ -145,16 +179,6 @@ public class AttendanceFragment extends Fragment {
     // 🔥 SAVE ATTENDANCE
     private void saveAttendance(){
 
-        if(classId == null || classId.isEmpty()){
-            Toast.makeText(getContext(),
-                    "Class not found!",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String today = new SimpleDateFormat("yyyy-MM-dd",
-                Locale.getDefault()).format(new Date());
-
         DatabaseReference todayRef =
                 attendanceRef.child(classId).child(today);
 
@@ -162,13 +186,54 @@ public class AttendanceFragment extends Fragment {
             todayRef.child(s.id).setValue(s.present);
         }
 
-        Toast.makeText(getContext(),
-                "Attendance Saved Successfully!",
-                Toast.LENGTH_SHORT).show();
+        updateAttendancePercentage();
 
-        // ✅ Go back to dashboard
-        requireActivity()
-                .getSupportFragmentManager()
-                .popBackStack();
+        Toast.makeText(getContext(),"Saved!",Toast.LENGTH_SHORT).show();
+
+        alreadyMarked = true;
+    }
+
+    // 🔥 CALCULATE %
+    private void updateAttendancePercentage(){
+
+        for(Student s : studentList){
+
+            String studentId = s.id;
+
+            attendanceRef.child(classId)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot snap) {
+
+                            int total = 0;
+                            int present = 0;
+
+                            for(DataSnapshot day : snap.getChildren()){
+
+                                if(day.hasChild(studentId)){
+                                    total++;
+
+                                    Boolean val = day.child(studentId)
+                                            .getValue(Boolean.class);
+
+                                    if(Boolean.TRUE.equals(val)){
+                                        present++;
+                                    }
+                                }
+                            }
+
+                            int percent = total == 0 ? 0 :
+                                    (present * 100 / total);
+
+                            studentsRef.child(studentId)
+                                    .child("attendance")
+                                    .setValue(percent);
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {}
+                    });
+        }
     }
 }

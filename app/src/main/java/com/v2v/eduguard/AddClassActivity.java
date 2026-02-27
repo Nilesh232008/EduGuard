@@ -43,7 +43,45 @@ public class AddClassActivity extends AppCompatActivity {
             return;
         }
 
-        // 🔥 Find Teacher UID by Email
+        String fullClass = className + "-" + section;
+
+        // 🔥 CHECK IF CLASS ALREADY EXISTS
+        classesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                for(DataSnapshot ds : snapshot.getChildren()){
+
+                    String cName = ds.child("className").getValue(String.class);
+                    String sec = ds.child("section").getValue(String.class);
+
+                    if(cName != null && sec != null){
+
+                        String existing = cName + "-" + sec;
+
+                        if(existing.equalsIgnoreCase(fullClass)){
+                            Toast.makeText(AddClassActivity.this,
+                                    "Class already assigned!",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+                }
+
+                // ✅ If not found → continue
+                findTeacherAndSave(className, section, email);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void findTeacherAndSave(String className,
+                                    String section,
+                                    String email){
+
         teachersRef.orderByChild("email")
                 .equalTo(email)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
@@ -58,7 +96,6 @@ public class AddClassActivity extends AppCompatActivity {
                             return;
                         }
 
-                        // Get teacher UID
                         String teacherId = snapshot.getChildren()
                                 .iterator()
                                 .next()
@@ -68,12 +105,7 @@ public class AddClassActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-
-                        Toast.makeText(AddClassActivity.this,
-                                "Database Error",
-                                Toast.LENGTH_SHORT).show();
-                    }
+                    public void onCancelled(@NonNull DatabaseError error) {}
                 });
     }
 

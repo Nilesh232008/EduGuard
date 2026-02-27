@@ -1,5 +1,6 @@
 package com.v2v.eduguard;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.*;
 import android.widget.TextView;
@@ -51,20 +52,21 @@ public class StudentsAdapter
         holder.risk.setText("Risk: " + s.riskLevel +
                 " (" + s.riskScore + ")");
 
-        // 🔥 COLOR LOGIC
+        // 🔥 COLOR
         switch (s.riskLevel){
-
-            case "HIGH":
-                holder.risk.setTextColor(Color.RED);
-                break;
-
-            case "MEDIUM":
-                holder.risk.setTextColor(Color.parseColor("#FFA500"));
-                break;
-
-            default:
-                holder.risk.setTextColor(Color.GREEN);
+            case "HIGH": holder.risk.setTextColor(Color.RED); break;
+            case "MEDIUM": holder.risk.setTextColor(Color.parseColor("#FFA500")); break;
+            default: holder.risk.setTextColor(Color.GREEN);
         }
+
+        // ✅ CLICK → OPEN DETAIL PAGE
+        holder.itemView.setOnClickListener(v -> {
+
+            Intent intent = new Intent(v.getContext(), StudentDetailActivity.class);
+            intent.putExtra("studentId", s.id);
+            intent.putExtra("studentName", s.name);
+            v.getContext().startActivity(intent);
+        });
     }
 
     @Override

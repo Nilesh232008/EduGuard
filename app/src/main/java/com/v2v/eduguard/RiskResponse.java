@@ -1,14 +1,15 @@
 package com.v2v.eduguard;
 
 public class RiskResponse {
-    private String risk;
-    private float percentage;
 
-    public String getRisk() {
+    private int risk;        // % value
+    private String level;    // LOW / MEDIUM / HIGH
+
+    public int getRisk() {
         return risk;
     }
 
-    public float getPercentage() {
-        return percentage;
+    public String getLevel() {
+        return level;
     }
 }

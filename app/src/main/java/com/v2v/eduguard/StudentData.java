@@ -1,11 +1,13 @@
 package com.v2v.eduguard;
-
 public class StudentData {
-    private float attendance;
-    private float marks;
-    private float behavior;
-    private float fees;
-    private float assignments;
+
+    public float attendance;
+    public float marks;
+    public float behavior;
+    public float fees;
+    public float assignments;
+
+    public StudentData() {}
 
     public StudentData(float attendance, float marks, float behavior, float fees, float assignments) {
         this.attendance = attendance;
