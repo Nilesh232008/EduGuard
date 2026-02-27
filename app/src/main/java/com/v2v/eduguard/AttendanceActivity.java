@@ -137,11 +137,6 @@ public class AttendanceActivity extends AppCompatActivity {
     // 🔥 CALL THIS WHEN SAVING (Add a Save Button later)
     private void saveAttendance(){
 
-        if(classId == null || classId.isEmpty()){
-            Toast.makeText(this,"Class not found!",Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         String today = new SimpleDateFormat("yyyy-MM-dd",
                 Locale.getDefault()).format(new Date());
 
@@ -149,15 +144,73 @@ public class AttendanceActivity extends AppCompatActivity {
                 attendanceRef.child(classId).child(today);
 
         for(Student s : studentList){
-
             todayRef.child(s.id).setValue(s.present);
         }
+
+        // 🔥 UPDATE ML FIELD
+        updateAttendancePercentage();
 
         Toast.makeText(this,
                 "Attendance Saved Successfully!",
                 Toast.LENGTH_SHORT).show();
 
-        finish(); // optional but recommended
+        finish();
+    }
+
+    private void updateAttendancePercentage(){
+
+        studentsRef.orderByChild("teacherId")
+                .equalTo(teacherId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                        for(DataSnapshot ds : snapshot.getChildren()){
+
+                            String studentId = ds.getKey();
+
+                            attendanceRef.child(classId)
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot snap) {
+
+                                            int totalDays = 0;
+                                            int presentDays = 0;
+
+                                            for(DataSnapshot day : snap.getChildren()){
+
+                                                if(day.hasChild(studentId)){
+                                                    totalDays++;
+
+                                                    Boolean present =
+                                                            day.child(studentId)
+                                                                    .getValue(Boolean.class);
+
+                                                    if(Boolean.TRUE.equals(present)){
+                                                        presentDays++;
+                                                    }
+                                                }
+                                            }
+
+                                            int percentage = totalDays == 0 ? 0 :
+                                                    (presentDays * 100 / totalDays);
+
+                                            studentsRef.child(studentId)
+                                                    .child("attendance")
+                                                    .setValue(percentage);
+                                        }
+
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError error) {}
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
     }
 
 }

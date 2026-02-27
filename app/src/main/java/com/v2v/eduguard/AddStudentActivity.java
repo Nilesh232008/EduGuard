@@ -1,6 +1,7 @@
 package com.v2v.eduguard;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -48,85 +49,99 @@ public class AddStudentActivity extends AppCompatActivity {
 
         FirebaseUser teacher = mAuth.getCurrentUser();
 
-        if(teacher != null){
-            teacherId = teacher.getUid();
+        if(teacher == null){
+            Toast.makeText(this,"Teacher not logged in!",Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
+
+        teacherId = teacher.getUid();
+
+        Toast.makeText(this,"Teacher ID: "+teacherId,Toast.LENGTH_SHORT).show();
 
         loadTeacherClasses();
 
         btnAdd.setOnClickListener(v -> createParentAndStudent());
     }
 
-    // 🔥 LOAD CLASSES INTO SPINNER
+    // 🔥 LOAD ONLY TEACHER'S CLASS
     private void loadTeacherClasses(){
 
-        classesRef.orderByChild("teacherId")
-                .equalTo(teacherId)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+        classesRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                        classNames.clear();
-                        classIds.clear();
+                classNames.clear();
+                classIds.clear();
 
-                        if(!snapshot.exists()){
-                            Toast.makeText(AddStudentActivity.this,
-                                    "No classes assigned!",
-                                    Toast.LENGTH_LONG).show();
-                            finish();
-                            return;
-                        }
+                for(DataSnapshot ds : snapshot.getChildren()){
 
-                        for(DataSnapshot ds : snapshot.getChildren()){
+                    String tid = ds.child("teacherId").getValue(String.class);
 
-                            String id = ds.getKey();
+                    if(tid != null && tid.equals(teacherId)){
 
-                            String name = ds.child("className")
-                                    .getValue(String.class);
+                        String id = ds.getKey();
 
-                            String section = ds.child("section")
-                                    .getValue(String.class);
+                        String name = ds.child("className").getValue(String.class);
+                        String section = ds.child("section").getValue(String.class);
 
-                            String displayName = name + " - " + section;
+                        if(name == null) name = "Unknown";
+                        if(section == null) section = "";
 
-                            classNames.add(displayName);
-                            classIds.add(id);
-                        }
+                        String display = name + " - " + section;
 
-                        ArrayAdapter<String> adapter =
-                                new ArrayAdapter<>(AddStudentActivity.this,
-                                        android.R.layout.simple_spinner_dropdown_item,
-                                        classNames);
-
-                        spinnerClass.setAdapter(adapter);
-
-                        spinnerClass.setOnItemSelectedListener(
-                                new AdapterView.OnItemSelectedListener() {
-
-                                    @Override
-                                    public void onItemSelected(AdapterView<?> parent,
-                                                               android.view.View view,
-                                                               int position,
-                                                               long id) {
-
-                                        selectedClassId = classIds.get(position);
-                                        selectedClassName = classNames.get(position);
-                                    }
-
-                                    @Override
-                                    public void onNothingSelected(AdapterView<?> parent) { }
-                                });
+                        classNames.add(display);
+                        classIds.add(id);
                     }
+                }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
+                if(classNames.isEmpty()){
+                    Toast.makeText(AddStudentActivity.this,
+                            "❌ No class assigned to this teacher!",
+                            Toast.LENGTH_LONG).show();
 
-                        Toast.makeText(AddStudentActivity.this,
-                                "Failed to load classes",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+                    debugAllClasses(); // 🔥 debug
+                    return;
+                }
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                        AddStudentActivity.this,
+                        android.R.layout.simple_spinner_dropdown_item,
+                        classNames
+                );
+
+                spinnerClass.setAdapter(adapter);
+
+                // 🔥 set default selection
+                selectedClassId = classIds.get(0);
+                selectedClassName = classNames.get(0);
+
+                spinnerClass.setOnItemSelectedListener(
+                        new AdapterView.OnItemSelectedListener() {
+
+                            @Override
+                            public void onItemSelected(AdapterView<?> parent,
+                                                       View view,
+                                                       int position,
+                                                       long id) {
+
+                                selectedClassId = classIds.get(position);
+                                selectedClassName = classNames.get(position);
+                            }
+
+                            @Override
+                            public void onNothingSelected(AdapterView<?> parent) {}
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(AddStudentActivity.this,
+                        "DB Error: " + error.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     // 🔥 CREATE PARENT
@@ -137,6 +152,11 @@ public class AddStudentActivity extends AppCompatActivity {
 
         if(studentName.isEmpty() || parentEmail.isEmpty()){
             Toast.makeText(this,"Fill all fields",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if(selectedClassId.isEmpty()){
+            Toast.makeText(this,"No class selected!",Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -166,7 +186,6 @@ public class AddStudentActivity extends AppCompatActivity {
                 });
     }
 
-    // 🔥 SAVE PARENT ROLE
     private void saveParentRole(String parentId,
                                 String email,
                                 String studentName){
@@ -189,20 +208,29 @@ public class AddStudentActivity extends AppCompatActivity {
         String studentId = studentsRef.push().getKey();
 
         HashMap<String,Object> studentMap = new HashMap<>();
+
         studentMap.put("name",studentName);
         studentMap.put("classId",selectedClassId);
         studentMap.put("className",selectedClassName);
         studentMap.put("teacherId",teacherId);
         studentMap.put("parentId",parentId);
         studentMap.put("parentEmail",email);
+
+        studentMap.put("attendance",0);
+        studentMap.put("marks",50);
+        studentMap.put("behavior",1);
+        studentMap.put("feesPaid",true);
+
+        studentMap.put("riskScore",0);
         studentMap.put("riskLevel","LOW");
+
         studentMap.put("createdAt",System.currentTimeMillis());
 
         studentsRef.child(studentId)
                 .setValue(studentMap)
                 .addOnSuccessListener(unused -> {
 
-                    FirebaseAuth.getInstance().signOut(); // ⭐ prevents parent login
+                    FirebaseAuth.getInstance().signOut();
 
                     Toast.makeText(this,
                             "Student Added!\nParent Password: "+DEFAULT_PARENT_PASS,
@@ -210,5 +238,27 @@ public class AddStudentActivity extends AppCompatActivity {
 
                     finish();
                 });
+    }
+
+    // 🔥 DEBUG
+    private void debugAllClasses(){
+
+        classesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                for(DataSnapshot ds : snapshot.getChildren()){
+
+                    String tid = ds.child("teacherId").getValue(String.class);
+
+                    System.out.println("ClassID: " + ds.getKey()
+                            + " teacherId: " + tid);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
     }
 }

@@ -48,8 +48,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database:20.3.0")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     implementation("com.github.anastr:speedviewlib:1.6.1")
-
-
-
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
 }
