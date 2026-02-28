@@ -69,43 +69,38 @@ public class InsightsFragment extends Fragment {
 
     private void loadInsights(){
 
-        studentsListener = studentsRef.addValueEventListener(new ValueEventListener() {
+        studentsListener = studentsRef
+                .orderByChild("teacherId")
+                .equalTo(teacherId)
+                .addValueEventListener(new ValueEventListener() {
 
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-                studentList.clear(); // 🔥 clear old list properly
+                        studentList.clear();
 
-                for(DataSnapshot ds : snapshot.getChildren()){
+                        for(DataSnapshot ds : snapshot.getChildren()){
 
-                    String teacherIdDb = ds.child("teacherId").getValue(String.class);
+                            String id = ds.getKey();
+                            String name = ds.child("name").getValue(String.class);
 
-                    if(teacherIdDb == null || !teacherIdDb.equals(teacherId)){
-                        continue;
+                            float attendance = getFloat(ds,"attendance");
+                            float marks = getFloat(ds,"marks");
+                            float behavior = getFloat(ds,"behavior");
+                            float fees = getBoolean(ds,"feesPaid") ? 1 : 0;
+                            float assignments = getFloat(ds,"assignments");
+
+                            Student s = new Student(id,name);
+
+                            // 🔥 CALL API FOR REAL CALCULATION
+                            callAPI(s, attendance, marks, behavior, fees, assignments);
+                            Log.d("INSIGHTS_DEBUG","Children count: " + snapshot.getChildrenCount());
+                        }
                     }
 
-                    String id = ds.getKey();
-                    String name = ds.child("name").getValue(String.class);
-
-                    float attendance = getFloat(ds,"attendance");
-                    float marks = getFloat(ds,"marks");
-                    float behavior = getFloat(ds,"behavior");
-                    float fees = getBoolean(ds,"feesPaid") ? 1 : 0;
-
-                    float assignmentScore = 100;
-
-                    Student s = new Student(id, name);
-
-                    callAPI(s, attendance, marks, behavior, fees, assignmentScore);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-                Log.e("FIREBASE_ERROR", error.getMessage());
-            }
-        });
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
     }
 
     private float getFloat(DataSnapshot ds, String key){
@@ -114,8 +109,20 @@ public class InsightsFragment extends Fragment {
     }
 
     private boolean getBoolean(DataSnapshot ds, String key){
-        Boolean val = ds.child(key).getValue(Boolean.class);
-        return val != null && val;
+
+        Object value = ds.child(key).getValue();
+
+        if(value == null) return false;
+
+        if(value instanceof Boolean){
+            return (Boolean) value;
+        }
+
+        if(value instanceof Long){
+            return ((Long) value) == 1;
+        }
+
+        return false;
     }
 
     private void callAPI(Student student,
@@ -127,14 +134,15 @@ public class InsightsFragment extends Fragment {
 
         new Thread(() -> {
 
-            int riskScore = 50;
-            String riskLevel = "MEDIUM";
+            int riskScore = 0;
+            String riskLevel = "LOW";
 
             try{
 
                 URL url = new URL(API_URL);
                 HttpURLConnection conn =
                         (HttpURLConnection) url.openConnection();
+                Log.d("API_DEBUG", "Calling API: " + API_URL);
 
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type","application/json");
@@ -163,9 +171,10 @@ public class InsightsFragment extends Fragment {
 
                     JSONObject res = new JSONObject(response);
 
-                    riskScore = res.getInt("risk_percent");
-                    riskLevel = res.getString("risk");
+                    riskScore = res.getInt("riskScore");
+                    riskLevel = res.getString("riskLevel");
                 }
+
 
             }catch(Exception e){
                 Log.e("API_ERROR", e.getMessage());
@@ -176,23 +185,24 @@ public class InsightsFragment extends Fragment {
 
             requireActivity().runOnUiThread(() -> {
 
-                // 🔥 UPDATE FIREBASE
-                studentsRef.child(student.id).child("riskScore")
-                        .setValue(finalRiskScore);
-
-                studentsRef.child(student.id).child("riskLevel")
-                        .setValue(finalRiskLevel);
-
-                // 🔥 UPDATE UI
+                // 🔥 UPDATE STUDENT OBJECT
                 student.riskScore = finalRiskScore;
                 student.riskLevel = finalRiskLevel;
 
                 studentList.add(student);
 
+                // 🔥 SORT AFTER ADDING
                 Collections.sort(studentList,
                         (a,b)-> b.riskScore - a.riskScore);
 
                 adapter.notifyDataSetChanged();
+
+                // 🔥 OPTIONAL: Save in Firebase
+                studentsRef.child(student.id).child("riskScore")
+                        .setValue(finalRiskScore);
+
+                studentsRef.child(student.id).child("riskLevel")
+                        .setValue(finalRiskLevel);
             });
 
         }).start();

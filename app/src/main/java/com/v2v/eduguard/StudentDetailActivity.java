@@ -1,6 +1,7 @@
 package com.v2v.eduguard;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.*;
 
 import androidx.annotation.NonNull;
@@ -66,8 +67,18 @@ public class StudentDetailActivity extends AppCompatActivity {
                 Float behavior = ds.child("behavior").getValue(Float.class);
                 etBehavior.setText(String.valueOf(behavior != null ? behavior : 1));
 
-                Boolean fees = ds.child("feesPaid").getValue(Boolean.class);
-                switchFees.setChecked(fees != null && fees);
+                Object value = ds.child("feesPaid").getValue();
+
+                boolean fees = false;
+
+                if(value instanceof Boolean){
+                    fees = (Boolean) value;
+                }
+                else if(value instanceof Long){
+                    fees = ((Long) value) == 1;
+                }
+
+                switchFees.setChecked(fees);
             }
 
             @Override
@@ -82,6 +93,11 @@ public class StudentDetailActivity extends AppCompatActivity {
         float behavior = parseFloat(etBehavior.getText().toString());
         boolean fees = switchFees.isChecked();
 
+        Log.d("SAVE_DEBUG", "Assignments: " + assignments);
+        Log.d("SAVE_DEBUG", "Marks: " + marks);
+        Log.d("SAVE_DEBUG", "Behavior: " + behavior);
+        Log.d("SAVE_DEBUG", "Fees: " + fees);
+
         HashMap<String, Object> map = new HashMap<>();
         map.put("assignments", assignments);
         map.put("marks", marks);
@@ -89,10 +105,14 @@ public class StudentDetailActivity extends AppCompatActivity {
         map.put("feesPaid", fees);
 
         studentRef.updateChildren(map)
-                .addOnSuccessListener(unused ->
-                        Toast.makeText(this, "Data Saved Successfully", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to Save Data", Toast.LENGTH_SHORT).show());
+                .addOnSuccessListener(unused -> {
+                    Log.d("SAVE_DEBUG", "Data Saved Successfully");
+                    Toast.makeText(this, "Data Saved Successfully", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("SAVE_DEBUG", "Save Failed: " + e.getMessage());
+                    Toast.makeText(this, "Failed to Save Data", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private int parseInt(String s) {

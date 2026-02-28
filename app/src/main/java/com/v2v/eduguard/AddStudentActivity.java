@@ -226,8 +226,8 @@ public class AddStudentActivity extends AppCompatActivity {
         studentMap.put("attendance", 0);
         studentMap.put("marks", 0);
         studentMap.put("assignments", 0);
-        studentMap.put("fees", 0);
-        studentMap.put("behaviour", 0);
+        studentMap.put("feesPaid", 0);
+        studentMap.put("behavior", 0);
 
         // (optional but good for your AI logic later)
         studentMap.put("riskScore", 0);
