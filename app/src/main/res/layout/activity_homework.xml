@@ -1,68 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="12dp"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- CLASS SELECT -->
-    <Spinner
-        android:id="@+id/spinnerClass"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginBottom="8dp"/>
-
-    <!-- SUBJECT -->
-    <EditText
-        android:id="@+id/etSubject"
-        android:hint="Enter Subject (Math, Science...)"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"/>
-
-    <EditText
-        android:id="@+id/etAssignmentNo"
-        android:hint="Enter Assignment No (1,2,3...)"
-        android:inputType="number"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginTop="8dp"/>
-
-    <!-- DATE -->
-    <TextView
-        android:id="@+id/tvDate"
-        android:text="Select Date"
+    <!-- MAIN CONTENT -->
+    <LinearLayout
+        android:orientation="vertical"
         android:padding="12dp"
-        android:textSize="16sp"
-        android:background="@android:drawable/editbox_background"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="match_parent">
 
-    <!-- SEARCH -->
-    <EditText
-        android:id="@+id/searchStudent"
-        android:hint="Search student..."
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"/>
+        <!-- CLASS SELECT -->
+        <Spinner
+            android:id="@+id/spinnerClass"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"/>
 
-    <!-- SAVE -->
-    <Button
+        <!-- SUBJECT -->
+        <EditText
+            android:id="@+id/etSubject"
+            android:hint="Enter Subject (Math, Science...)"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"/>
+
+        <EditText
+            android:id="@+id/etAssignmentNo"
+            android:hint="Enter Assignment No (1,2,3...)"
+            android:inputType="number"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="8dp"/>
+
+        <!-- DATE -->
+        <TextView
+            android:id="@+id/tvDate"
+            android:text="Select Date"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:background="@android:drawable/editbox_background"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- SEARCH -->
+        <EditText
+            android:id="@+id/searchStudent"
+            android:hint="Search student..."
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"/>
+
+        <!-- RECYCLER -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/homeworkRecycler"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+
+    <!-- ROUND SAVE BUTTON -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnSaveHomework"
-        android:text="Save Homework"
-        android:backgroundTint="#2563EB"
-        android:textColor="@android:color/white"
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="Save"
+        android:tint="@android:color/white"
+        app:backgroundTint="#2563EB"
+        app:srcCompat="@drawable/ic_save"
+        android:layout_gravity="bottom|end"/>
 
-    <!-- RECYCLER -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/homeworkRecycler"
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-</LinearLayout>
+</FrameLayout>

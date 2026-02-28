@@ -254,11 +254,11 @@
 
             <!-- HOMEWORK -->
             <LinearLayout
-                android:orientation="vertical"
-                android:gravity="center"
-                android:paddingHorizontal="10dp"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp">
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/btnHomework"
@@ -266,14 +266,14 @@
                     android:layout_height="wrap_content"
                     android:tint="@android:color/white"
                     app:backgroundTint="#D97706"
-                    app:srcCompat="@drawable/ic_homework"/>
+                    app:srcCompat="@drawable/ic_homework" />
 
                 <TextView
-                    android:text="Assignment"
-                    android:textStyle="bold"
-                    android:layout_marginTop="6dp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Assignment"
+                    android:textStyle="bold" />
 
             </LinearLayout>
 
