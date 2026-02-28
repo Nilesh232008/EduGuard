@@ -17,6 +17,7 @@ import com.google.firebase.database.*;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class ParentProfileFragment extends Fragment {
 
@@ -113,9 +114,10 @@ public class ParentProfileFragment extends Fragment {
 
         ArrayList<Entry> entries = new ArrayList<>();
 
-        entries.add(new Entry(0, currentRisk - 20));
-        entries.add(new Entry(1, currentRisk - 10));
-        entries.add(new Entry(2, currentRisk));
+        entries.add(new Entry(0, new Random().nextInt(101)));
+        entries.add(new Entry(1, new Random().nextInt(101)));
+        entries.add(new Entry(2, new Random().nextInt(101)));
+        entries.add(new Entry(3, currentRisk));
 
         LineDataSet dataSet =
                 new LineDataSet(entries, "Risk %");
@@ -138,6 +140,35 @@ public class ParentProfileFragment extends Fragment {
         riskLineChart.animateX(1000);
         riskLineChart.invalidate();
     }
+//    private void setupRiskLineChart(int currentRisk){
+//
+//        ArrayList<Entry> entries = new ArrayList<>();
+//
+//        entries.add(new Entry(0, currentRisk - 20));
+//        entries.add(new Entry(1, currentRisk - 10));
+//        entries.add(new Entry(2, currentRisk));
+//
+//        LineDataSet dataSet =
+//                new LineDataSet(entries, "Risk %");
+//
+//        dataSet.setColor(Color.RED);
+//        dataSet.setCircleColor(Color.RED);
+//        dataSet.setLineWidth(3f);
+//        dataSet.setDrawFilled(true);
+//        dataSet.setFillColor(Color.parseColor("#FFCDD2"));
+//
+//        LineData lineData = new LineData(dataSet);
+//
+//        riskLineChart.setData(lineData);
+//        riskLineChart.getDescription().setEnabled(false);
+//        riskLineChart.getAxisRight().setEnabled(false);
+//
+//        XAxis xAxis = riskLineChart.getXAxis();
+//        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+//
+//        riskLineChart.animateX(1000);
+//        riskLineChart.invalidate();
+//    }
 
     private void setRiskInsights(int risk){
 
