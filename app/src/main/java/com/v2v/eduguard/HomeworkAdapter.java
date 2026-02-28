@@ -2,6 +2,7 @@ package com.v2v.eduguard;
 
 import android.view.*;
 import android.widget.*;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -47,11 +48,14 @@ public class HomeworkAdapter
 
         holder.name.setText(s.name);
 
+        // 🔥 VERY IMPORTANT (avoid recycle bug)
         holder.done.setOnCheckedChangeListener(null);
-        holder.done.setChecked(s.present);
+
+        // 🔥 Use homeworkSubmitted instead of present
+        holder.done.setChecked(s.homeworkSubmitted);
 
         holder.done.setOnCheckedChangeListener((btn, checked) -> {
-            s.present = checked;
+            s.homeworkSubmitted = checked;
         });
     }
 

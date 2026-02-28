@@ -190,32 +190,55 @@ public class HomeworkActivity extends AppCompatActivity {
             return;
         }
 
+        // 🔥 MAIN HOMEWORK DATA
         HashMap<String, Object> hwMap = new HashMap<>();
         hwMap.put("subject", subject);
         hwMap.put("assignmentNo", assignmentNo);
         hwMap.put("dueDate", selectedDate);
+        hwMap.put("classId", classId);
         hwMap.put("createdBy", teacherId);
         hwMap.put("createdAt", System.currentTimeMillis());
 
-        homeworkRef.child(classId).child(hwId);
+        // ✅ SAVE MAIN HOMEWORK
+        homeworkRef.child(classId).child(hwId).setValue(hwMap);
 
+        // 🔥 SAVE STUDENT-WISE DATA + UPDATE ASSIGNMENT COUNT
         for (Student s : studentList) {
 
-            if (s.id == null) continue; // safety
+            if (s.id == null) continue;
 
             HashMap<String, Object> studentMap = new HashMap<>();
             studentMap.put("name", s.name);
-            studentMap.put("submitted", s.present);
-            studentMap.put("submittedOn", s.present ? selectedDate : "");
+            studentMap.put("submitted", s.homeworkSubmitted);
+            studentMap.put("submittedOn", s.homeworkSubmitted ? selectedDate : "");
 
+            // Save inside Homework -> Class -> HW -> Students
             homeworkRef.child(classId)
                     .child(hwId)
                     .child("students")
                     .child(s.id)
                     .setValue(studentMap);
+
+            // 🔥 If submitted → increase assignment count in Students table
+            if (s.homeworkSubmitted) {
+
+                DatabaseReference studentRef = studentsRef.child(s.id);
+
+                studentRef.child("assignments").get()
+                        .addOnSuccessListener(snapshot -> {
+
+                            int current = 0;
+                            if (snapshot.exists()) {
+                                Integer value = snapshot.getValue(Integer.class);
+                                if (value != null) current = value;
+                            }
+
+                            studentRef.child("assignments").setValue(current + 1);
+                        });
+            }
         }
 
-        Toast.makeText(this, "Assignment Saved!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Assignment Assigned Successfully!", Toast.LENGTH_SHORT).show();
         finish();
     }
 }

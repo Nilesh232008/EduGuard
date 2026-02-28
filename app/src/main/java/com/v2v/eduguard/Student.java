@@ -4,8 +4,6 @@ public class Student {
 
     public String id, name;
 
-    // 🔥 ATTENDANCE
-    public boolean present = false;
 
     // 🔥 HOMEWORK / ASSIGNMENT
     public boolean homeworkDone = false;
@@ -18,6 +16,12 @@ public class Student {
 
     // 🔥 EXTRA (for your assignment logic)
     public int assignments = 0; // number of completed assignments
+
+    // Attendance (keep separate)
+    public boolean present = false;
+
+    // 🔥 NEW FIELD FOR HOMEWORK
+    public boolean homeworkSubmitted = false;
 
     // 🔥 RISK
     public int riskScore = 0;
