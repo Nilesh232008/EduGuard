@@ -59,68 +59,30 @@ public class ParentProfileFragment extends Fragment {
 
     private void loadStudentData(){
 
-        studentRef.addListenerForSingleValueEvent(
-                new ValueEventListener() {
+        int attendancePercent = new Random().nextInt(101);
+        int homeworkPercent = new Random().nextInt(101);
+        int risk = new Random().nextInt(101);
 
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+        tvName.setText("Demo Student");
 
-                        if(!snapshot.exists()) return;
-
-                        String name = snapshot.child("name")
-                                .getValue(String.class);
-
-                        Integer attendance =
-                                snapshot.child("attendance")
-                                        .getValue(Integer.class);
-
-                        Integer assignments =
-                                snapshot.child("assignments")
-                                        .getValue(Integer.class);
-
-                        if(name != null)
-                            tvName.setText(name);
-
-                        int attendancePercent =
-                                attendance != null ? attendance : 0;
-
-                        int homeworkPercent =
-                                assignments != null ? assignments : 0;
-
-                        setupPie(attendancePie,
-                                attendancePercent,
-                                "Attendance");
-
-                        setupPie(homeworkPie,
-                                homeworkPercent,
-                                "Homework");
-
-                        int risk = (100 - attendancePercent)
-                                + (100 - homeworkPercent);
-
-                        risk = risk / 2;
-
-                        setupRiskLineChart(risk);
-
-                        setRiskInsights(risk);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {}
-                });
+        setupPie(attendancePie, attendancePercent, "Attendance");
+        setupPie(homeworkPie, homeworkPercent, "Homework");
+        setupRiskLineChart(risk);
+        setRiskInsights(risk);
     }
 
     private void setupRiskLineChart(int currentRisk){
 
         ArrayList<Entry> entries = new ArrayList<>();
 
-        entries.add(new Entry(0, new Random().nextInt(101)));
-        entries.add(new Entry(1, new Random().nextInt(101)));
-        entries.add(new Entry(2, new Random().nextInt(101)));
+        Random r = new Random();
+
+        entries.add(new Entry(0, r.nextInt(101)));
+        entries.add(new Entry(1, r.nextInt(101)));
+        entries.add(new Entry(2, r.nextInt(101)));
         entries.add(new Entry(3, currentRisk));
 
-        LineDataSet dataSet =
-                new LineDataSet(entries, "Risk %");
+        LineDataSet dataSet = new LineDataSet(entries, "Risk %");
 
         dataSet.setColor(Color.RED);
         dataSet.setCircleColor(Color.RED);
@@ -133,9 +95,12 @@ public class ParentProfileFragment extends Fragment {
         riskLineChart.setData(lineData);
         riskLineChart.getDescription().setEnabled(false);
         riskLineChart.getAxisRight().setEnabled(false);
+        riskLineChart.getAxisLeft().setAxisMinimum(0f);
+        riskLineChart.getAxisLeft().setAxisMaximum(100f);
 
         XAxis xAxis = riskLineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
 
         riskLineChart.animateX(1000);
         riskLineChart.invalidate();
@@ -206,14 +171,12 @@ public class ParentProfileFragment extends Fragment {
                           int percent,
                           String label){
 
-        ArrayList<PieEntry> entries =
-                new ArrayList<>();
+        ArrayList<PieEntry> entries = new ArrayList<>();
 
         entries.add(new PieEntry(percent, "Done"));
         entries.add(new PieEntry(100 - percent, "Remaining"));
 
-        PieDataSet set =
-                new PieDataSet(entries, label);
+        PieDataSet set = new PieDataSet(entries, label);
 
         set.setColors(
                 Color.parseColor("#16A34A"),
@@ -229,5 +192,8 @@ public class ParentProfileFragment extends Fragment {
         chart.setCenterText(percent + "%");
         chart.setCenterTextSize(18f);
         chart.animateY(1000);
+
+        chart.invalidate();          // 🔥 IMPORTANT
+        chart.notifyDataSetChanged();// 🔥 IMPORTANT
     }
 }
