@@ -30,6 +30,11 @@ public class HomeworkActivity extends AppCompatActivity {
     String selectedDate = "";
     String teacherId, classId = "";
 
+    Spinner spinnerClass;
+
+    ArrayList<String> classList = new ArrayList<>();
+    ArrayList<String> classIdList = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +47,8 @@ public class HomeworkActivity extends AppCompatActivity {
         recycler = findViewById(R.id.homeworkRecycler);
         searchStudent = findViewById(R.id.searchStudent);
 
+        spinnerClass = findViewById(R.id.spinnerClass);
+
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
         teacherId = FirebaseAuth.getInstance().getUid();
@@ -49,14 +56,14 @@ public class HomeworkActivity extends AppCompatActivity {
         studentsRef = FirebaseDatabase.getInstance().getReference("Students");
         homeworkRef = FirebaseDatabase.getInstance().getReference("Homework");
 
-        loadTeacherClass();
+        loadTeacherClasses();
         pickDate();
 
         btnSave.setOnClickListener(v -> saveHomework());
     }
 
     // 🔥 Get teacher class
-    private void loadTeacherClass() {
+    private void loadTeacherClasses() {
 
         DatabaseReference classRef = FirebaseDatabase.getInstance().getReference("Classes");
 
@@ -66,16 +73,49 @@ public class HomeworkActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
 
+                        classList.clear();
+                        classIdList.clear();
+
                         for (DataSnapshot snap : snapshot.getChildren()) {
-                            classId = snap.getKey();
+
+                            String id = snap.getKey();
+                            String name = snap.child("className").getValue(String.class);
+
+                            if (id != null && name != null) {
+                                classIdList.add(id);
+                                classList.add(name);
+                            }
                         }
 
-                        loadStudents();
+                        ArrayAdapter<String> adapterSpinner =
+                                new ArrayAdapter<>(HomeworkActivity.this,
+                                        android.R.layout.simple_spinner_item,
+                                        classList);
+
+                        adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                        spinnerClass.setAdapter(adapterSpinner);
+
+                        if (!classIdList.isEmpty()) {
+                            classId = classIdList.get(0);
+                            loadStudents();
+                        }
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {}
                 });
+
+        spinnerClass.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
+
+                classId = classIdList.get(position);
+                loadStudents();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
     // 🔥 Load students of class
@@ -157,7 +197,7 @@ public class HomeworkActivity extends AppCompatActivity {
         hwMap.put("createdBy", teacherId);
         hwMap.put("createdAt", System.currentTimeMillis());
 
-        homeworkRef.child(classId).child(hwId).setValue(hwMap);
+        homeworkRef.child(classId).child(hwId);
 
         for (Student s : studentList) {
 
