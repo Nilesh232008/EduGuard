@@ -4,23 +4,28 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.*;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.github.anastr.speedviewlib.SpeedView;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.*;
-import com.github.anastr.speedviewlib.SpeedView;
+import com.github.mikephil.charting.components.XAxis;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.*;
 
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 public class ParentProfileFragment extends Fragment {
 
     TextView tvName, tvRiskReason, tvTips;
     PieChart attendancePie, homeworkPie;
-    SpeedView speedView;
+    LineChart riskLineChart;
+
+    DatabaseReference studentRef;
+    String studentId;
 
     @Override
     public View onCreateView(LayoutInflater inflater,
@@ -38,33 +43,105 @@ public class ParentProfileFragment extends Fragment {
 
         attendancePie = view.findViewById(R.id.attendancePie);
         homeworkPie = view.findViewById(R.id.homeworkPie);
-        speedView = view.findViewById(R.id.speedView);
+        riskLineChart = view.findViewById(R.id.riskLineChart);
 
-        loadDemoInsights();
+        studentId = FirebaseAuth.getInstance().getUid();
+
+        studentRef = FirebaseDatabase.getInstance()
+                .getReference("Students")
+                .child(studentId);
+
+        loadStudentData();
 
         return view;
     }
 
-    private void loadDemoInsights(){
+    private void loadStudentData(){
 
-        tvName.setText("Rahul Sharma");
+        studentRef.addListenerForSingleValueEvent(
+                new ValueEventListener() {
 
-        Random rand = new Random();
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-        int attendance = rand.nextInt(100);
-        int homework = rand.nextInt(100);
+                        if(!snapshot.exists()) return;
 
-        setupPie(attendancePie, attendance, "Attendance");
-        setupPie(homeworkPie, homework, "Homework");
+                        String name = snapshot.child("name")
+                                .getValue(String.class);
 
-        int risk = (100-attendance) + (100-homework);
-        risk = risk/2;
+                        Integer attendance =
+                                snapshot.child("attendance")
+                                        .getValue(Integer.class);
 
-        speedView.speedTo(risk);
+                        Integer assignments =
+                                snapshot.child("assignments")
+                                        .getValue(Integer.class);
+
+                        if(name != null)
+                            tvName.setText(name);
+
+                        int attendancePercent =
+                                attendance != null ? attendance : 0;
+
+                        int homeworkPercent =
+                                assignments != null ? assignments : 0;
+
+                        setupPie(attendancePie,
+                                attendancePercent,
+                                "Attendance");
+
+                        setupPie(homeworkPie,
+                                homeworkPercent,
+                                "Homework");
+
+                        int risk = (100 - attendancePercent)
+                                + (100 - homeworkPercent);
+
+                        risk = risk / 2;
+
+                        setupRiskLineChart(risk);
+
+                        setRiskInsights(risk);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    private void setupRiskLineChart(int currentRisk){
+
+        ArrayList<Entry> entries = new ArrayList<>();
+
+        entries.add(new Entry(0, currentRisk - 20));
+        entries.add(new Entry(1, currentRisk - 10));
+        entries.add(new Entry(2, currentRisk));
+
+        LineDataSet dataSet =
+                new LineDataSet(entries, "Risk %");
+
+        dataSet.setColor(Color.RED);
+        dataSet.setCircleColor(Color.RED);
+        dataSet.setLineWidth(3f);
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(Color.parseColor("#FFCDD2"));
+
+        LineData lineData = new LineData(dataSet);
+
+        riskLineChart.setData(lineData);
+        riskLineChart.getDescription().setEnabled(false);
+        riskLineChart.getAxisRight().setEnabled(false);
+
+        XAxis xAxis = riskLineChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+
+        riskLineChart.animateX(1000);
+        riskLineChart.invalidate();
+    }
+
+    private void setRiskInsights(int risk){
 
         if(risk > 70){
-
-            speedView.getIndicator().setColor(Color.RED);
 
             tvRiskReason.setText(
                     "Low attendance and incomplete homework detected.");
@@ -73,11 +150,8 @@ public class ParentProfileFragment extends Fragment {
                     "• Ensure daily school attendance\n" +
                             "• Allocate fixed study hours\n" +
                             "• Stay connected with teachers");
-
         }
         else if(risk > 40){
-
-            speedView.getIndicator().setColor(Color.YELLOW);
 
             tvRiskReason.setText(
                     "Academic consistency needs improvement.");
@@ -85,11 +159,8 @@ public class ParentProfileFragment extends Fragment {
             tvTips.setText(
                     "• Encourage homework completion\n" +
                             "• Monitor progress weekly");
-
         }
         else{
-
-            speedView.getIndicator().setColor(Color.GREEN);
 
             tvRiskReason.setText(
                     "Student is performing well.");
@@ -100,14 +171,18 @@ public class ParentProfileFragment extends Fragment {
         }
     }
 
-    private void setupPie(PieChart chart, int percent, String label){
+    private void setupPie(PieChart chart,
+                          int percent,
+                          String label){
 
-        ArrayList<PieEntry> entries = new ArrayList<>();
+        ArrayList<PieEntry> entries =
+                new ArrayList<>();
 
         entries.add(new PieEntry(percent, "Done"));
-        entries.add(new PieEntry(100-percent, "Remaining"));
+        entries.add(new PieEntry(100 - percent, "Remaining"));
 
-        PieDataSet set = new PieDataSet(entries, label);
+        PieDataSet set =
+                new PieDataSet(entries, label);
 
         set.setColors(
                 Color.parseColor("#16A34A"),

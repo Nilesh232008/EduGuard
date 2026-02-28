@@ -22,14 +22,12 @@
             android:layout_height="wrap_content"/>
 
 
-        <!-- RISK METER -->
-        <com.github.anastr.speedviewlib.SpeedView
-            android:id="@+id/speedView"
+        <!-- RISK LINE GRAPH -->
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/riskLineChart"
             android:layout_marginTop="20dp"
             android:layout_width="match_parent"
-            android:layout_height="220dp"
-            app:sv_speedTextSize="24sp"
-            app:sv_unit="Risk"/>
+            android:layout_height="250dp"/>
 
 
         <!-- PIE CHARTS ROW -->
