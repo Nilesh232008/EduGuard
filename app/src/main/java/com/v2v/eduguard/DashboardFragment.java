@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import android.content.Intent;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.*;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -22,6 +23,8 @@ public class DashboardFragment extends Fragment {
 
     DatabaseReference studentsRef, attendanceRef, homeworkRef;
 
+    FloatingActionButton btnProfile;
+
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
@@ -33,6 +36,13 @@ public class DashboardFragment extends Fragment {
         tvCritical = view.findViewById(R.id.tvCritical);
         tvHomework = view.findViewById(R.id.tvHomework);
         tvAlert = view.findViewById(R.id.tvAlert);
+
+        btnProfile = view.findViewById(R.id.btnProfile);
+
+        btnProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), TeacherProfileActivity.class);
+            startActivity(intent);
+        });
 
         view.findViewById(R.id.btnAddStudent)
                 .setOnClickListener(v ->
