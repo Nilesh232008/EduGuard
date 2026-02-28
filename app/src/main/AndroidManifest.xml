@@ -37,6 +37,8 @@
         <activity android:name=".TeacherDetailActivity"/>
         <activity android:name=".MainActivity"/>
         <activity android:name=".StudentDetailActivity"/>
+        <activity android:name=".TeacherProfileActivity"/>
+
     </application>
 
 </manifest>
