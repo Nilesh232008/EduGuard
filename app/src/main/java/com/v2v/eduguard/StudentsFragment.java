@@ -1,5 +1,7 @@
 package com.v2v.eduguard;
 
+import static java.lang.reflect.Array.getInt;
+
 import android.os.Bundle;
 import android.text.*;
 import android.view.*;
@@ -62,6 +64,11 @@ public class StudentsFragment extends Fragment {
         return view;
     }
 
+    private int getInt(DataSnapshot ds, String key){
+        Integer val = ds.child(key).getValue(Integer.class);
+        return val != null ? val : 0;
+    }
+
     private void loadStudents(){
 
         studentsRef.orderByChild("teacherId")
@@ -79,14 +86,19 @@ public class StudentsFragment extends Fragment {
                             String name = ds.child("name")
                                     .getValue(String.class);
 
+                            int riskScore = getInt(ds,"riskScore");
+                            String riskLevel = ds.child("riskLevel")
+                                    .getValue(String.class);
+
                             Student s = new Student(id,name);
 
-                            calculateRisk(s);
+                            s.riskScore = riskScore;
+                            s.riskLevel = riskLevel != null ? riskLevel : "LOW";
 
                             studentList.add(s);
                         }
 
-                        // 🔥 SORT BY RISK
+                        // 🔥 SORT BY REAL ML RISK
                         Collections.sort(studentList,
                                 (a,b)-> b.riskScore - a.riskScore);
 
@@ -99,21 +111,6 @@ public class StudentsFragment extends Fragment {
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) { }
                 });
-    }
-
-    // 🔥 SIMPLE RISK ENGINE
-    private void calculateRisk(Student s){
-
-        int score = new Random().nextInt(100); // demo risk
-
-        s.riskScore = score;
-
-        if(score >= 70)
-            s.riskLevel = "HIGH";
-        else if(score >= 40)
-            s.riskLevel = "MEDIUM";
-        else
-            s.riskLevel = "LOW";
     }
 
     private void filter(String text){
