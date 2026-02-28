@@ -21,18 +21,21 @@
     <EditText
         android:id="@+id/etAssignments"
         android:hint="Assignments Completed"
+        android:inputType="number"
         android:layout_width="match_parent"
         android:layout_height="50dp"/>
 
     <EditText
         android:id="@+id/etMarks"
         android:hint="Marks (out of 100)"
+        android:inputType="numberDecimal"
         android:layout_width="match_parent"
         android:layout_height="50dp"/>
 
     <EditText
         android:id="@+id/etBehavior"
         android:hint="Behavior (1-5)"
+        android:inputType="numberDecimal"
         android:layout_width="match_parent"
         android:layout_height="50dp"/>
 
@@ -41,5 +44,12 @@
         android:text="Fees Paid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnSave"
+        android:text="Save Details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"/>
 
 </LinearLayout>
